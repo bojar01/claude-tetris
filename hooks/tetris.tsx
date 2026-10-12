@@ -12,6 +12,8 @@ type Game = {
   level: number
   isOver: boolean
   isPaused: boolean
+  // Milliseconds left before play resumes (3, 2, 1…); 0 when playing.
+  countdown: number
 }
 
 const W = 10
@@ -36,6 +38,8 @@ const COLORS: Record<Kind, string> = {
   L: '#ff8800',
 }
 const POINTS = [0, 100, 300, 500, 800]
+const COUNTDOWN_MS = 3000
+const TICK_MS = 50
 
 const randomKind = (): Kind => KINDS[Math.floor(Math.random() * KINDS.length)]!
 
@@ -57,7 +61,7 @@ const fits = (board: Game['board'], p: Piece): boolean =>
     }),
   )
 
-const newGame = (): Game => ({
+const newGame = (countdown = COUNTDOWN_MS): Game => ({
   board: Array.from({ length: H }, () => Array<Kind | null>(W).fill(null)),
   piece: spawn(randomKind()),
   next: randomKind(),
@@ -66,6 +70,7 @@ const newGame = (): Game => ({
   level: 1,
   isOver: false,
   isPaused: false,
+  countdown,
 })
 
 // Locks the piece, clears full rows, spawns the next one.
@@ -121,9 +126,20 @@ const hardDrop = (g: Game): Game => {
   return lock({ ...g, piece: { ...g.piece, y } }, (y - g.piece.y) * 2)
 }
 
+const secondsLeft = (g: Game) => Math.ceil(g.countdown / 1000)
+
+const centered = (text: string, width: number) => {
+  const left = Math.floor((width - text.length) / 2)
+  return ' '.repeat(left) + text + ' '.repeat(width - left - text.length)
+}
+
 const gravityMs = (level: number) => Math.max(80, 800 - (level - 1) * 70)
 
-const isFrozen = (g: Game, props: Props) => g.isOver || g.isPaused || !props.isWorking
+const isStopped = (g: Game, props: Props) => g.isOver || g.isPaused || !props.isWorking
+
+const isCountingDown = (g: Game) => g.countdown > 0
+
+const isFrozen = (g: Game, props: Props) => isStopped(g, props) || isCountingDown(g)
 
 const apply = (surface: ClientSurface<Game>, props: Props, fn: (g: Game) => Game) => {
   const g = surface.state
@@ -142,7 +158,8 @@ const isSpace = (key: string) => key.toLowerCase() === 'space' || (key.length > 
 const handleKey = (surface: ClientSurface<Game>, props: Props, key: string) => {
   const play = (g: Game): Game => {
     if (key === 'r') return newGame()
-    if (key === 'p') return { ...g, isPaused: !g.isPaused }
+    // Leaving the pause counts down before play resumes.
+    if (key === 'p') return g.isPaused ? { ...g, isPaused: false, countdown: COUNTDOWN_MS } : { ...g, isPaused: true }
     if (isFrozen(g, props)) return g
     if (key === 'left' || key === 'h') return move(g, -1, 0)
     if (key === 'right' || key === 'l') return move(g, 1, 0)
@@ -157,12 +174,25 @@ const handleKey = (surface: ClientSurface<Game>, props: Props, key: string) => {
 const start = (surface: ClientSurface<Game>, props: Props) => {
   let current = props
   let acc = 0
+  // Set when Claude starts working again; the next tick starts the countdown.
+  let resumed = false
   const set = (fn: (g: Game) => Game) => apply(surface, current, fn)
 
-  surface.every(50, () => {
+  surface.every(TICK_MS, () => {
     const g = surface.state
-    if (!g || isFrozen(g, current)) return
-    acc += 50
+    if (!g) return
+    if (resumed) {
+      resumed = false
+      if (!g.isOver) set(x => ({ ...x, countdown: COUNTDOWN_MS }))
+      return
+    }
+    if (isStopped(g, current)) return
+    if (isCountingDown(g)) {
+      acc = 0
+      set(x => ({ ...x, countdown: Math.max(0, x.countdown - TICK_MS) }))
+      return
+    }
+    acc += TICK_MS
     if (acc >= gravityMs(g.level)) {
       acc = 0
       set(x => move(x, 0, 1))
@@ -172,6 +202,7 @@ const start = (surface: ClientSurface<Game>, props: Props) => {
   surface.setState(newGame())
 
   return (next: Props) => {
+    if (next.isWorking && !current.isWorking) resumed = true
     current = next
   }
 }
@@ -201,6 +232,10 @@ const Tetris: ClientModule<Props, Game> = (props, surface) => {
     return { kind: g.board[y]![x] ?? null, isGhost: false }
   }
 
+  // While counting down, the number is drawn over the middle row of the board.
+  const countdownRow = isCountingDown(g) && !isStopped(g, props) ? Math.floor(H / 2) - 1 : -1
+  const countdownText = centered(String(secondsLeft(g)), W * 2)
+
   const nextShape = SHAPES[g.next].filter(row => row.some(Boolean))
   const status = g.isOver
     ? 'GAME OVER — r to restart'
@@ -208,12 +243,16 @@ const Tetris: ClientModule<Props, Game> = (props, surface) => {
       ? 'Claude is done ✔ paused'
       : g.isPaused
         ? 'PAUSED — p to resume'
-        : 'Claude is coding… play!'
+        : isCountingDown(g)
+          ? `Get ready… ${secondsLeft(g)}`
+          : 'Claude is coding… play!'
 
   return (
     <Box flexDirection="row">
       <Box flexDirection="column" borderStyle="round" borderColor="claude">
-        {g.board.map((_, y) => (
+        {g.board.map((_, y) => y === countdownRow ? (
+          <Text key={String(y)} bold color="claude">{countdownText}</Text>
+        ) : (
           <Text key={String(y)}>
             {Array.from({ length: W }, (_, x) => {
               const { kind, isGhost } = cellAt(x, y)
@@ -236,7 +275,7 @@ const Tetris: ClientModule<Props, Game> = (props, surface) => {
           <Text color={COLORS[g.next]}>{row.map(on => (on ? '██' : '  ')).join('')}</Text>
         ))}
         <Text> </Text>
-        <Text color={g.isOver ? 'error' : props.isWorking ? 'success' : 'warning'}>{status}</Text>
+        <Text color={g.isOver ? 'error' : props.isWorking && !isCountingDown(g) ? 'success' : 'warning'}>{status}</Text>
         <Text> </Text>
         <Text dimColor>← → move   ↑ rotate</Text>
         <Text dimColor>↓ soft drop  space/Enter hard drop</Text>

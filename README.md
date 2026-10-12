@@ -20,6 +20,8 @@ next turn.
 ## Features
 
 - The game opens as soon as Claude starts working, and pauses as soon as it is done.
+- A 3, 2, 1 countdown before play resumes, so you never miss a piece: when Claude gets back to
+  work, when you leave the pause and when you start a new game.
 - The seven classic pieces, a ghost piece showing where the piece will land, and a preview of the
   next one.
 - A new level every 10 lines, with faster gravity at each level.
