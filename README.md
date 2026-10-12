@@ -20,6 +20,8 @@ next turn.
 ## Features
 
 - The game opens as soon as Claude starts working, and pauses as soon as it is done.
+- A 3, 2, 1 countdown before play resumes, so you never miss a piece: when Claude gets back to
+  work, when you leave the pause and when you start a new game.
 - The seven classic pieces, a ghost piece showing where the piece will land, and a preview of the
   next one.
 - A new level every 10 lines, with faster gravity at each level.
@@ -38,10 +40,10 @@ next turn.
 In a Claude Code session, type:
 
 ```
-/plugin install tetris --marketplace <owner>/<repo>
+/plugin install tetris --marketplace bojar01/claude-tetris
 ```
 
-Replace `<owner>/<repo>` with the GitHub repository that hosts this plugin. Then:
+Then:
 
 1. When asked "Add marketplace?", answer `y`.
 2. Pick the install scope (`user` by default: the plugin is active in all your sessions) and
@@ -55,9 +57,23 @@ To try the plugin without installing it, clone the repository and start Claude C
 folder:
 
 ```sh
-git clone https://github.com/<owner>/<repo>.git
-claude --plugin-dir ./<repo>
+git clone https://github.com/bojar01/claude-tetris.git
+claude --plugin-dir ./claude-tetris
 ```
+
+## Updating
+
+Claude Code does not update plugins from third-party marketplaces on its own by default. Either:
+
+- turn on automatic updates once: open `/plugin`, go to **Marketplaces**, select `tetris-claude`
+  and enable auto-update. New versions are then picked up when Claude Code starts;
+- or update by hand when you want to:
+
+  ```
+  /plugin marketplace update tetris-claude
+  ```
+
+To hear about new versions, watch the repository on GitHub (**Watch** → **Custom** → **Releases**).
 
 ## Usage
 
