@@ -1,0 +1,23 @@
+# Type declarations Claude Code generates when it loads the plugin
+.claude-plugin/types/
+
+# Dependencies and build output
+node_modules/
+dist/
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

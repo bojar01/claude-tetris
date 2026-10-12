@@ -1,0 +1,5 @@
+{
+  "name": "tetris-claude",
+  "owner": { "name": "max" },
+  "plugins": [{ "name": "tetris", "source": "./" }]
+}
