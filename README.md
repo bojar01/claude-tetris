@@ -40,10 +40,10 @@ next turn.
 In a Claude Code session, type:
 
 ```
-/plugin install tetris --marketplace <owner>/<repo>
+/plugin install tetris --marketplace bojar01/claude-tetris
 ```
 
-Replace `<owner>/<repo>` with the GitHub repository that hosts this plugin. Then:
+Then:
 
 1. When asked "Add marketplace?", answer `y`.
 2. Pick the install scope (`user` by default: the plugin is active in all your sessions) and
@@ -57,9 +57,23 @@ To try the plugin without installing it, clone the repository and start Claude C
 folder:
 
 ```sh
-git clone https://github.com/<owner>/<repo>.git
-claude --plugin-dir ./<repo>
+git clone https://github.com/bojar01/claude-tetris.git
+claude --plugin-dir ./claude-tetris
 ```
+
+## Updating
+
+Claude Code does not update plugins from third-party marketplaces on its own by default. Either:
+
+- turn on automatic updates once: open `/plugin`, go to **Marketplaces**, select `tetris-claude`
+  and enable auto-update. New versions are then picked up when Claude Code starts;
+- or update by hand when you want to:
+
+  ```
+  /plugin marketplace update tetris-claude
+  ```
+
+To hear about new versions, watch the repository on GitHub (**Watch** → **Custom** → **Releases**).
 
 ## Usage
 

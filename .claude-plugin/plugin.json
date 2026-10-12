@@ -1,6 +1,6 @@
 {
   "name": "tetris",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A game of Tetris opens while Claude thinks or codes, and pauses when it is done",
   "types": "./types/index.d.ts"
 }
