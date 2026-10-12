@@ -1,5 +1,6 @@
 {
   "name": "tetris-claude",
-  "owner": { "name": "max" },
+  "owner": { "name": "bojar" },
+  "description": "Tetris for Claude Code: play while Claude works",
   "plugins": [{ "name": "tetris", "source": "./" }]
 }
